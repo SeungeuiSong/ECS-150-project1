@@ -1,4 +1,12 @@
-      char *eof;
+all: sshell
+
+sshell: sshell.c
+	gcc -O2 -Wall -Wextra -Werror -o sshell sshell.c
+
+clean:
+	rm -f sshell     
+     
+     char *eof;
 
 	/* Read command line */
 	eof = fgets(cmd, CMD_LINE_MAX, stdin);
