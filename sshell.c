@@ -45,6 +45,7 @@ void runCd(int argc, char *destination){
 void runRedirection(int argc, int redirectionLocation, char *argumentList[]){
         
         int output_fd;
+        int retval;
         if (redirectionLocation == 0){ //Command line related errors
                 fprintf(stderr, "Error: missing command\n");
                 ISERROR = 1;
@@ -66,9 +67,19 @@ void runRedirection(int argc, int redirectionLocation, char *argumentList[]){
                                 fprintf(stderr, "Error: cannot open output file\n");
                         }
                         else{
-                                dup2(output_fd, STDOUT_FILENO);
-                                execvp(precedingCommand[0], precedingCommand);
-                                close(output_fd);        
+                                pid_t pid = fork();
+                                if (pid == 0){ //Child
+                                        dup2(output_fd, STDOUT_FILENO);
+                                        retval = execvp(precedingCommand[0], precedingCommand);
+                                        close(output_fd); 
+                                } else if (pid !=0){
+                                        wait(&retval);
+                                }
+                                else {
+                                        perror("Error with forking");
+                                        exit(1);
+                                }
+                                      
                         }
 
         }
@@ -135,9 +146,9 @@ int main(void){
 
                 char* argumentList[ARGUMENT_MAX + 1]; //must hold null at the end as well
                 char *token;
-
-                token = strtok(cmd, " ");
                 
+                token = strtok(cmd, " ");
+
                 while (token != NULL){ //2 Cases. Redirection or a normal command
 
                         if (!strcmp(token,">") ){
@@ -155,8 +166,7 @@ int main(void){
                         argc +=1;
                 }
                 
-                
-
+        
                 if (argc > ARGUMENT_MAX){
                         fprintf(stderr, "Error: Too many process arguments\n");
                         ISERROR = 1;
