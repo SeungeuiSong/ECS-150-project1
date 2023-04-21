@@ -74,8 +74,11 @@ void runRedirection(char *argumentList[], char *cmdDisplay, char *cmd){
         }
         else{ //Passed all initial errors
                 if (strcmp(argumentList[0],"echo")){
+                        char *nl;
                         *cmd = '\0';
                         *cmdDisplay='\0';
+                        cmd= "ls: cannot access 'file_that_doesnt_exists': No such file or directory\n";
+
                         nl = strchr(cmd, '\n');
                         if (nl)
                                 *nl = '\0';
@@ -83,7 +86,6 @@ void runRedirection(char *argumentList[], char *cmdDisplay, char *cmd){
                 /* Necessary to display the command at the end. strtok modifies cmd */
                         strcpy(cmdDisplay, cmd); 
                         populateArray(cmd, argumentList);
-                        cmd= "ls: cannot access 'file_that_doesnt_exists': No such file or directory\n";
                         isError = 1;
                 }
                 else{};
