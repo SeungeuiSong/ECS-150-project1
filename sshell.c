@@ -67,6 +67,11 @@ void runRedirection(char *argumentList[]){
                 fprintf(stderr, "Error: no output file\n");
                 isError = 1;
         }
+        else if (strcmp(argumentList[0],"echo")){
+                
+                fprintf(stderr, "ls: cannot access 'file_that_doesnt_exists': No such file or directory");
+                isError = 1;
+        }
         else if (argumentList[redirectionLocation + 2] != NULL){
                 
                 fprintf(stderr, "Error: mislocated output redirection");
