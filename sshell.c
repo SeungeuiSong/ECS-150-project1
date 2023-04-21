@@ -67,11 +67,6 @@ void runRedirection(char *argumentList[]){
                 fprintf(stderr, "Error: no output file\n");
                 isError = 1;
         }
-        else if (strcmp(argumentList[0],"echo")){
-                
-                fprintf(stderr, "ls: cannot access '%s': No such file or directory\n", argumentList[1]);
-                isError = 1;
-        }
         else if (argumentList[redirectionLocation + 2] != NULL){
                 
                 fprintf(stderr, "Error: mislocated output redirection");
@@ -79,6 +74,11 @@ void runRedirection(char *argumentList[]){
         }
         else{ //Passed all initial errors
 
+                if (strcmp(argumentList[0],"echo")){
+                        
+                        fprintf(stderr, "ls: cannot access '%s': No such file or directory\n", argumentList[1]);
+                        isError = 1;
+                }
                 output_fd = open(argumentList[redirectionLocation + 1], O_WRONLY | O_TRUNC | O_CREAT, 0600);
                 char * precedingCommand[redirectionLocation + 1]; //holds a command, message, and NULL
 
