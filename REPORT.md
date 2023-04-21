@@ -40,8 +40,8 @@ the cmd variable. This requires us to strcopy cmd into cmdDisplay for display
 purposes at the end of each executed command.
 
 We then declare an char* argumentList[] variable, bounded by the
-specificed argument max macroplus 1 due to NULL being added to 
-the end (in order for this toeasily pass into execvp). We then pass the 
+specificed argument max macro plus 1 due to NULL being added to 
+the end (in order for this to easily pass into execvp). We then pass the 
 command line (as the variable cmd) and the array into the populateArray 
 function,which populates the array created. The array becomes virtually the 
 same as argv[].
@@ -70,10 +70,10 @@ function guarded by another if.
 This nested if function covers all of the possible features of our shell.
 
 These features include:
-The builtin commands of exit, cd, and pwd
-The utility commands of a terminal with zero or multiple arguments (cat, echo
-etc.)
-Output Redirection
+- The builtin commands of exit, cd, and pwd
+- The utility commands of a terminal with zero or multiple arguments (cat,
+echo, etc.)
+- Output Redirection
 
 argumentList[0] is checked for our builtin commands. Our three builtin 
 commands (exit, pwd, and cd) are checked for first, and if successful 
@@ -96,20 +96,21 @@ handling, as an error can occur anywhere across functions (a token too long,
 execvp returns -1, etc.).
 
 int argc: The argument count, or size of the argument array. Is needed
-for multiple function, so makes sense to declare as a global variable rather
-than passing as an additional argument for multiple functions.
+for multiple functions, so it makes more sense to declare as a global 
+variable rather than passing it as an additional argument for multiple 
+functions.
 
 int redirectionLocation: Relevant to the runRedirection function. Knows
 where the metacharacter '>' across a command line input, which helps us figure
 out what is the command or the output file.
 
 int isRedirect: 1 when the meta character '>' is detected in the command line
-input.
+input. 0 otherwise.
 
 The reason they are global is because they are required for multiple functions.
 The values do not change across function calls and only change when a new
-command is interpreted or array is created. They are set to 0 everytime
-a new command is interpreted.
+command is interpreted or array is created. They are set to 0 every time
+a new command is interpreted (refer to the top the while loop in main)
 
 # List of functions
 
@@ -120,13 +121,15 @@ void runPwd(): Runs when argumentList[0] is "pwd". Prints the current
 working directory.
 
 void runCd(char *destination): Runs when argumentList[0] is "cd".
-It takes in argumentList[1] (called destination in the function), and use 
+It takes in argumentList[1] (called destination in the function), and uses 
 chdir() on destination in order to move the current directory/destination.
+If chdir() returns a -1, we will print an error message.
 
 void runRedirection(char *argumentList[]): Runs when isRedirection = 1.
 This function changes the output directory into the file name inputted by the
 user, specifically after the meta character '>'. It utilizes dup2() and
-a temporary array in order to change the output directory.
+a temporary array in order to change the output directory and execute the
+command properly.
 
 void executeRegularCommand(char* argumentList[]): Takes in an argument
 list. Will run execvp(argumentList[0], argumentList) if an error is not
@@ -135,20 +138,19 @@ detected beforehand. Utilizes child/parent functions.
 void populateArray(char* cmd, char* argumentList[]): Takes the command line
 and populates the argumentList[] array.
 
-All of the above functions have a variety of conditionals to account for
-a potential error. For example, runRedirection if no output file is detected
-or runC
+All of the above functions have a guard clauses to detect a potential error. 
+For example, runRedirection if no output file is detected or run.
 
 # Limitations and Possible Design Optimizations
 
 Our simple shell is unable to support piping, simple environment variables,
 and combined redirection. This was mainly due to time constraints.
 
-There was also a mistake with out interpretation of output redirection.
+There was also a mistake with our interpretation of output redirection.
 We had accidently considered the command "echo hello > myfile.txt"
 instead of "echo hello>myfile.txt" and due to time constraints
 we weren't able to fix this bug (although, it still passes the autograder
-tests)
+tests).
 
 Our initial design goal was to make a struc called command, which would
 encompass everything that is related to command. Examples 
@@ -157,8 +159,9 @@ would include argc (the number of arguments of a command), argv[]
 variables such as if it was a command that required redirection
 (similar to our isRedirection variable). 
 
-We would store those commands into a data structure (such as a linked list)
-and iterate through in order to implement to piping command.
+We would store these struc commands into a data structure
+(such as a linked list) and iterate through it in order to implement piping 
+commands for example.
 
 We left the implementation of struc command out primarily due to the fact
 our program did not support piping, thus making this struc command 
@@ -170,4 +173,5 @@ would be to make this structure.
 stackoverflow.com
 geeksforgeeks.org
 linux.die.net
+tutorialspoint.com
 gnu.org
