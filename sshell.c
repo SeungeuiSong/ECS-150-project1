@@ -67,7 +67,7 @@ void runRedirection(char *argumentList[]){
                 fprintf(stderr, "Error: no output file\n");
                 isError = 1;
         }
-        else if (!strcmp(argumentList[redirectionLocation + 1], NULL)){
+        else if (argumentList[redirectionLocation + 2] != NULL){
                 
                 fprintf(stderr, "Error: mislocated output redirection");
                 isError = 1;
