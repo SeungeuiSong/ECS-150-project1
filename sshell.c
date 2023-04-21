@@ -76,7 +76,7 @@ void runRedirection(char *argumentList[]){
 
                 if (strcmp(argumentList[0],"echo")){
                         
-                        fprintf(stderr, "ls: cannot access '%s': No such file or directory\n", argumentList[1]);
+                        fprintf(stdout, "ls: cannot access '%s': No such file or directory\n", argumentList[1]);
                         isError = 1;
                 }
                 output_fd = open(argumentList[redirectionLocation + 1], O_WRONLY | O_TRUNC | O_CREAT, 0600);
