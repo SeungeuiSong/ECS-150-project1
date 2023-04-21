@@ -10,8 +10,16 @@
 #define ARGUMENT_MAX 16
 #define TOKEN_MAX 32
 
-int ISERROR = 0; //global variable because an error can occur anywhere in the program.
-
+/*Global variables because they are required in multiple functions. Doesn't make sense to constantly feed them in as an extra argument*/
+int isError;
+int argc;
+int redirectionLocation;
+int isRedirect;
+void runovernumber(){                        
+        fprintf(stderr, "Error: too many process arguments\n");
+        isError = 1;
+                             
+}
 void runExit(){
 
         fprintf(stderr, "Bye...\n");
@@ -19,42 +27,53 @@ void runExit(){
         exit(0);
 }
 
-void runPwd(int argc){
+void runPwd(){
 
         char buffer[CMDLINE_MAX]; //to be able to print out some directory that is potentially 512 chars long
         if (argc > 1){
                 fprintf(stderr, "Error: Assignment said assume no arguments for pwd\n");
-                ISERROR = 1;
+                isError = 1;
         }else{
+
                 fprintf(stdout, "%s\n", getcwd(buffer,CMDLINE_MAX));
         }
 }
 
-void runCd(int argc, char *destination){
+void runCd(char *destination){
         
         if (argc == 3){
+
                 fprintf(stderr, "Error: Cannot cd into directory\n"); //Real reason is we assume one argument for cd
-                ISERROR = 1;
+                isError = 1;
         }
-        else if (chdir(destination) == -1){
+        else if (chdir(destination) == -1){ //Acts as a guard clause. Will execute no matter what, if -1 it fails
+
                 fprintf(stderr, "Error: Cannot cd into directory\n");
-                ISERROR = 1;
+                isError = 1;
         }
 }
 
-void runRedirection(int argc, int redirectionLocation, char *argumentList[]){
+void runRedirection(char *argumentList[]){
         
         int output_fd;
         int retval;
-        if (redirectionLocation == 0){ //Command line related errors
+        if (redirectionLocation == 0 || argc < 4){ //Command line related errors
+
                 fprintf(stderr, "Error: missing command\n");
-                ISERROR = 1;
+                isError = 1;
         }
         else if (redirectionLocation + 1 == argc){  //Array location + 1 equals size. If it's last, there's not output file
+        
                 fprintf(stderr, "Error: no output file\n");
-                ISERROR = 1;
+                isError = 1;
+        }
+        else if (!strcmp(argumentList[redirectionLocation + 1], NULL)){
+                
+                fprintf(stderr, "Error: mislocated output redirection");
+                isError = 1;
         }
         else{ //Passed all initial errors
+
                 output_fd = open(argumentList[redirectionLocation + 1], O_WRONLY | O_TRUNC | O_CREAT, 0600);
                 char * precedingCommand[redirectionLocation + 1]; //holds a command, message, and NULL
 
@@ -90,10 +109,12 @@ void executeRegularCommand(char * cmd, char* argumentList[]){
 
         int retval;
         pid_t pid = fork();
-                if (pid == 0){ //Child
-                        retval = execvp(cmd, argumentList);
-                        if (retval == -1){
+
+        if (pid == 0){ //Child
+                retval = execvp(cmd, argumentList);
+                if (retval == -1){
                                 printf("Error: command not found\n");
+                                isError = 1;
                         }
                 } else if (pid !=0){
                         wait(&retval);
@@ -104,25 +125,53 @@ void executeRegularCommand(char * cmd, char* argumentList[]){
                 }
 }
 
+void populateArray(char* cmd, char* argumentList[]){
+                
+        char *token;
+        token = strtok(cmd, " ");
+
+        while (token != NULL){ //2 Cases. Redirection or a normal command
+
+                if (!strcmp(token,">") ){
+                        isRedirect = 1;
+                        redirectionLocation = argc; //such that it is 1:1 with array location
+
+                }
+
+                if (strlen(token) > TOKEN_MAX){
+                        fprintf(stderr, "Error: Token exceeded token max\n");
+                        isError = 1;
+                } else
+                        argumentList[argc] = token;
+
+                token = strtok(NULL, " "); //must set the token to null again
+                argc +=1; //keep track of argc while also going through tokens
+        }
+
+        if (argc > ARGUMENT_MAX){
+                        fprintf(stderr, "Error: Too many process arguments\n");
+                        isError = 1;
+                } else 
+                        argumentList[argc] = NULL; //Necessary for execvp
+                
+}
+
 
 int main(void){
 
         char cmd[CMDLINE_MAX];
         char cmdDisplay[CMDLINE_MAX]; //required because strtok will manipulate our cmd
-        int argc;
-        int redirectionLocation;
-        int isRedirect;
 
         while (1) {
                 char *nl;
                 
-                /* Must set these to 0 as we literally read a new command line every time */
+                /* Must set these to 0 as we literally read a new command line every time. These will change */
                 *cmd = '\0';
                 *cmdDisplay='\0';
                 isRedirect = 0;
                 redirectionLocation = 0; 
                 argc = 0;
-                ISERROR = 0;
+                isError = 0;
 
                 /* Print prompt */
                 printf("sshell$ ");
@@ -142,64 +191,40 @@ int main(void){
                 if (nl)
                         *nl = '\0';
 
-                strcpy(cmdDisplay, cmd); //Necessary to display the command at the end. strtok modifies cmd
+                /* Necessary to display the command at the end. strtok modifies cmd */
+                strcpy(cmdDisplay, cmd);
 
-                char* argumentList[ARGUMENT_MAX + 1]; //must hold null at the end as well
-                char *token;
+                /* Creating and populating the argumentlist based on cmd */
+                char* argumentList[ARGUMENT_MAX + 1]; 
+                populateArray(cmd, argumentList);
                 
-                token = strtok(cmd, " ");
-
-                while (token != NULL){ //2 Cases. Redirection or a normal command
-
-                        if (!strcmp(token,">") ){
-                                isRedirect = 1;
-                                redirectionLocation = argc; //such that it is 1:1 with array location
-
-                        }
-                        if (strlen(token) > TOKEN_MAX){
-                                fprintf(stderr, "Error: Token exceeded token max\n");
-                                ISERROR = 1;
-                        } else
-                                argumentList[argc] = token;
-
-                        token = strtok(NULL, " "); //must set the token to null again
-                        argc +=1;
-                }
-                
-        
-                if (argc > ARGUMENT_MAX){
-                        fprintf(stderr, "Error: Too many process arguments\n");
-                        ISERROR = 1;
-                } else{
-                        argumentList[argc] = NULL; //Necessary for execvp
-                }
-
-
-                //3 possible builtin commands
-                if (!(ISERROR)){
-
-                        if (!strcmp(argumentList[0],"exit")){
+                /* All possible features */
+                if (!(isError)){
+                        if(argc > 17)
+                                runovernumber();
+                        else if (!strcmp(argumentList[0],"exit"))
                                 runExit();
-                        } else if (!strcmp(argumentList[0],"pwd")){
-                                runPwd(argc);
-                        } else if (!strcmp(argumentList[0],"cd")){
-                                runCd(argc, argumentList[1]); //if cd is ran with no argument, still works as NULL will be passed.
-                        }
-                        else if (isRedirect){
-                                runRedirection(argc, redirectionLocation, argumentList);
-                        }
-                        else {
-                                executeRegularCommand(argumentList[0], argumentList);\
-                        }
-
-
+                        else if (!strcmp(argumentList[0],"pwd"))
+                                runPwd();
+                        else if (!strcmp(argumentList[0],"cd"))
+                                runCd(argumentList[1]); //if cd is ran with no argument, still works as NULL will be passed.
+                        else if (isRedirect)
+                                runRedirection(argumentList);
+                        else //when everything is exhausted, we will attempt a regular command
+                                executeRegularCommand(argumentList[0], argumentList);
+                        
                 }
-                
-                if (!ISERROR){
+
+                /* Ending the command and printing line respective to if it was an error or not */
+                switch (!isError){
+                        case 1: //not an error
                         fprintf(stderr, "+ completed '%s' [%i]\n", cmdDisplay,EXIT_SUCCESS);
-                }
-                else{
+                        break;
+
+                        case 0: //an error
                         fprintf(stderr, "+ completed '%s' [%i]\n", cmdDisplay,EXIT_FAILURE);
+                        break;
+
                 }
 
         }
