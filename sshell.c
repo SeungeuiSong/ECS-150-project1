@@ -71,6 +71,7 @@ void runRedirection(char *argumentList[]){
                 
                 fprintf(stderr, "ls: cannot access '%s': No such file or directory", argumentList[1]);
                 isError = 1;
+                exit(0);
         }
         else if (argumentList[redirectionLocation + 2] != NULL){
                 
