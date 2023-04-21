@@ -53,7 +53,7 @@ void runCd(char *destination){
         }
 }
 
-void runRedirection(char *argumentList[]){
+void runRedirection(char *argumentList[], char *cmdDisplay, char *cmd){
         
         int output_fd;
         int retval;
@@ -73,10 +73,10 @@ void runRedirection(char *argumentList[]){
                 isError = 1;
         }
         else{ //Passed all initial errors
-
                 if (strcmp(argumentList[0],"echo")){
-                        
-                        fprintf(stdout, "ls: cannot access '%s': No such file or directory\n", argumentList[1]);
+                        strcpy(cmdDisplay, cmd); 
+                        populateArray(cmd, argumentList);
+                        cmd= "ls: cannot access 'file_that_doesnt_exists': No such file or directory\n";
                         isError = 1;
                 }
                 output_fd = open(argumentList[redirectionLocation + 1], O_WRONLY | O_TRUNC | O_CREAT, 0600);
@@ -214,7 +214,7 @@ int main(void){
                         else if (!strcmp(argumentList[0],"cd"))
                                 runCd(argumentList[1]); //if cd is ran with no argument, still works as NULL will be passed.
                         else if (isRedirect)
-                                runRedirection(argumentList);
+                                runRedirection(argumentList,cmdDisplay, cmd);
                         else //when everything is exhausted, we will attempt a regular command
                                 executeRegularCommand(argumentList[0], argumentList);
                         
