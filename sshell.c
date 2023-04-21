@@ -15,11 +15,7 @@ int isError;
 int argc;
 int redirectionLocation;
 int isRedirect;
-void runovernumber(){                        
-        fprintf(stderr, "Error: too many process arguments\n");
-        isError = 1;
-                             
-}
+
 void runExit(){
 
         fprintf(stderr, "Bye...\n");
@@ -31,6 +27,7 @@ void runPwd(){
 
         char buffer[CMDLINE_MAX]; //to be able to print out some directory that is potentially 512 chars long
         if (argc > 1){
+
                 fprintf(stderr, "Error: Assignment said assume no arguments for pwd\n");
                 isError = 1;
         }else{
@@ -53,11 +50,11 @@ void runCd(char *destination){
         }
 }
 
-void runRedirection(char *argumentList[], char *cmdDisplay, char *cmd){
+void runRedirection(char *argumentList[]){
         
         int output_fd;
         int retval;
-        if (redirectionLocation == 0 || argc < 4){ //Command line related errors
+        if (redirectionLocation == 0){ //Command line related errors
 
                 fprintf(stderr, "Error: missing command\n");
                 isError = 1;
@@ -67,28 +64,8 @@ void runRedirection(char *argumentList[], char *cmdDisplay, char *cmd){
                 fprintf(stderr, "Error: no output file\n");
                 isError = 1;
         }
-        else if (argumentList[redirectionLocation + 2] != NULL){
-                
-                fprintf(stderr, "Error: mislocated output redirection");
-                isError = 1;
-        }
         else{ //Passed all initial errors
-                if (strcmp(argumentList[0],"echo")){
-                        char *nl;
-                        *cmd = '\0';
-                        *cmdDisplay='\0';
-                        cmd= "ls: cannot access 'file_that_doesnt_exists': No such file or directory\n";
 
-                        nl = strchr(cmd, '\n');
-                        if (nl)
-                                *nl = '\0';
-
-                /* Necessary to display the command at the end. strtok modifies cmd */
-                        strcpy(cmdDisplay, cmd); 
-                        populateArray(cmd, argumentList);
-                        isError = 1;
-                }
-                else{};
                 output_fd = open(argumentList[redirectionLocation + 1], O_WRONLY | O_TRUNC | O_CREAT, 0600);
                 char * precedingCommand[redirectionLocation + 1]; //holds a command, message, and NULL
 
@@ -120,13 +97,13 @@ void runRedirection(char *argumentList[], char *cmdDisplay, char *cmd){
 
 }
 
-void executeRegularCommand(char * cmd, char* argumentList[]){
+void executeRegularCommand(char* argumentList[]){
 
         int retval;
         pid_t pid = fork();
 
         if (pid == 0){ //Child
-                retval = execvp(cmd, argumentList);
+                retval = execvp(argumentList[0], argumentList);
                 if (retval == -1){
                                 printf("Error: command not found\n");
                                 isError = 1;
@@ -159,8 +136,8 @@ void populateArray(char* cmd, char* argumentList[]){
                 } else
                         argumentList[argc] = token;
 
-                token = strtok(NULL, " "); //must set the token to null again
-                argc +=1; //keep track of argc while also going through tokens
+                token = strtok(NULL, " "); //so that token can be set to the next word
+                argc +=1; //keep track of argc
         }
 
         if (argc > ARGUMENT_MAX){
@@ -193,7 +170,11 @@ int main(void){
                 fflush(stdout);
 
                 /* Get command line */
-                nl = fgets(cmd, CMDLINE_MAX, stdin);
+                char *eof;
+                eof = fgets(cmd, CMDLINE_MAX, stdin);
+                if (!eof) {
+		        strncpy(cmd, "exit\n", CMDLINE_MAX); //exits the shell if nothing is inputted
+	        }
 
                 /* Print command line if stdin is not provided by terminal */
                 if (!isatty(STDIN_FILENO)) {
@@ -215,22 +196,21 @@ int main(void){
                 
                 /* All possible features */
                 if (!(isError)){
-                        if(argc > 17)
-                                runovernumber();
-                        else if (!strcmp(argumentList[0],"exit"))
+
+                        if (!strcmp(argumentList[0],"exit"))
                                 runExit();
                         else if (!strcmp(argumentList[0],"pwd"))
                                 runPwd();
                         else if (!strcmp(argumentList[0],"cd"))
                                 runCd(argumentList[1]); //if cd is ran with no argument, still works as NULL will be passed.
                         else if (isRedirect)
-                                runRedirection(argumentList,cmdDisplay, cmd);
+                                runRedirection(argumentList);
                         else //when everything is exhausted, we will attempt a regular command
-                                executeRegularCommand(argumentList[0], argumentList);
+                                executeRegularCommand(argumentList);
                         
                 }
 
-                /* Ending the command and printing line respective to if it was an error or not */
+                /* Ending the command and printing a line respective to if it was an error or not */
                 switch (!isError){
                         case 1: //not an error
                         fprintf(stderr, "+ completed '%s' [%i]\n", cmdDisplay,EXIT_SUCCESS);
