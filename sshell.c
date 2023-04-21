@@ -129,7 +129,7 @@ int main(void){
                 fflush(stdout);
 
                 /* Get command line */
-                fgets(cmd, CMDLINE_MAX, stdin);
+                nl = fgets(cmd, CMDLINE_MAX, stdin);
 
                 /* Print command line if stdin is not provided by terminal */
                 if (!isatty(STDIN_FILENO)) {
