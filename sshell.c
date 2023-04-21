@@ -72,6 +72,7 @@ void runRedirection(char *argumentList[]){
                         for (int i = 0; i < redirectionLocation; i++){
                                 precedingCommand[i] = argumentList[i];
                         }
+                        
                         precedingCommand[redirectionLocation] = NULL;
 
                         if (output_fd == -1){
@@ -105,9 +106,9 @@ void executeRegularCommand(char* argumentList[]){
         if (pid == 0){ //Child
                 retval = execvp(argumentList[0], argumentList);
                 if (retval == -1){
-                                printf("Error: command not found\n");
-                                isError = 1;
-                        }
+                        printf("Error: command not found\n");
+                        isError = 1;
+                }
                 } else if (pid !=0){
                         wait(&retval);
                 }
